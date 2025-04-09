@@ -109,16 +109,23 @@ plt.show()
 ```
 
 # Output:
+
 Number of training images: 20
+
 Number of training labels: 20
+
 Sample image shape (slices, height, width): (130, 320, 320)
+
 Voxel spacing (z, y, x): (1.25, 1.25, 1.3700000047683716)
 
 ![data_exploration_axial_sag_cor](https://github.com/user-attachments/assets/bedd7fa5-97aa-4b1b-a30e-3668210a4a38)
 
 Volume stats:
+
   Mean volume: 46750.75 voxels
+  
   Min volume: 32040 voxels
+  
   Max volume: 68148 voxels
 
 ![data_exploration_histo](https://github.com/user-attachments/assets/2deea097-35af-4e73-b9be-7665894fec92)
