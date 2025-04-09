@@ -604,8 +604,11 @@ if __name__ == "__main__":
 # Output
 
 Sample 1 Dice score: 0.0557
+
 Sample 2 Dice score: 0.1093
+
 Sample 3 Dice score: 0.0000
+
 Sample 4 Dice score: 0.1965
 
 Average Dice score over 4 samples: 0.0904
