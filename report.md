@@ -264,7 +264,9 @@ writer.close()
 # %%
 ```
 # Output:
+Total trainable parameters: 22,581,217
 
+![mymodel_tensorboard](https://github.com/user-attachments/assets/3f782423-f32a-4c0a-bb61-a8cc09550143)
 
 
 
