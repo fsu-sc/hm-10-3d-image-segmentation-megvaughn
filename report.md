@@ -478,24 +478,7 @@ if __name__ == "__main__":
 ```
 # Output:
 
-Epoch 1/100 | Train Dice Loss: 0.9463 | Val Dice Loss: 0.9725
-Epoch 2/100 | Train Dice Loss: 0.9552 | Val Dice Loss: 0.9375
-Epoch 3/100 | Train Dice Loss: 0.9460 | Val Dice Loss: 0.9757
-Epoch 4/100 | Train Dice Loss: 0.9485 | Val Dice Loss: 0.9254
-Epoch 5/100 | Train Dice Loss: 0.9129 | Val Dice Loss: 0.9827
-Epoch 6/100 | Train Dice Loss: 0.9497 | Val Dice Loss: 0.9817
-Epoch 7/100 | Train Dice Loss: 0.9157 | Val Dice Loss: 0.8979
-Epoch 8/100 | Train Dice Loss: 0.9294 | Val Dice Loss: 0.9057
-Epoch 9/100 | Train Dice Loss: 0.9212 | Val Dice Loss: 0.9160
-Epoch 10/100 | Train Dice Loss: 0.9268 | Val Dice Loss: 0.9770
-Epoch 11/100 | Train Dice Loss: 0.9333 | Val Dice Loss: 0.9248
-Epoch 12/100 | Train Dice Loss: 0.9022 | Val Dice Loss: 0.9457
-Epoch 13/100 | Train Dice Loss: 0.9189 | Val Dice Loss: 0.9567
-Epoch 14/100 | Train Dice Loss: 0.9595 | Val Dice Loss: 0.9190
-Epoch 15/100 | Train Dice Loss: 0.9347 | Val Dice Loss: 0.9309
-Epoch 16/100 | Train Dice Loss: 0.8999 | Val Dice Loss: 0.9401
-Epoch 17/100 | Train Dice Loss: 0.9371 | Val Dice Loss: 0.9690
-Early stopping triggered.
+<img width="279" alt="training_epochs" src="https://github.com/user-attachments/assets/40e33cbc-4405-49cb-87f5-693bf49b8475" />
 
 Training Dice Loss:
 
