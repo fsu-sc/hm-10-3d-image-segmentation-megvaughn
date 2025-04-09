@@ -347,11 +347,186 @@ TensorBoard logging should include:
 
 
 ```python
+# %%
+# training implementation
 
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from mymodel import UNet3D
+from analyze_data import HeartMRIDataset
+import os
+import numpy as np
+from datetime import datetime
+
+# dice loss b/t prediction and actual
+def dice_loss(pred, target, smooth=1e-5):
+    # [0, 1]
+    pred = torch.sigmoid(pred)
+    # flatten sample
+    pred_flat = pred.view(pred.shape[0], -1)      
+    target_flat = target.view(target.shape[0], -1)
+
+    intersection = (pred_flat * target_flat).sum(1)
+    dice = (2. * intersection + smooth) / (pred_flat.sum(1) + target_flat.sum(1) + smooth)
+
+    return 1 - dice.mean()  
+
+# training u net w/ train and valid loops
+def train_model(model, train_loader, val_loader, device, num_epochs=50, lr=1e-4):
+    
+    model = model.to(device)
+
+    # optimizer and scheduler
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
+
+    # tensorboard logging
+    log_dir = f"runs/heart_mri_unet3d_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    writer = SummaryWriter(log_dir)
+    print("TensorBoard logs will be written to:", log_dir)
+
+
+    # model architecture to tensorboard
+    sample_input = next(iter(train_loader))[0].to(device)  # one batch
+    writer.add_graph(model, sample_input)
+
+    # best validation loss 
+    best_val_loss = float("inf")  
+    # early stopping
+    patience = 10  
+    # how long w/out improvement
+    trigger = 0  
+
+    for epoch in range(num_epochs):
+        model.train()
+        train_losses = []
+
+        # training phase
+        for batch in train_loader:
+            # input and mask
+            x, y = batch[0].to(device), batch[1].to(device)  
+
+            optimizer.zero_grad()
+            # forward pass
+            output = model(x)  
+            # dice loss
+            loss = dice_loss(output, y)  
+            loss.backward()
+            optimizer.step()
+
+            train_losses.append(loss.item())
+
+        avg_train_loss = np.mean(train_losses)
+
+        # validation phase
+        model.eval()
+        val_losses = []
+        with torch.no_grad():
+            for batch in val_loader:
+                x, y = batch[0].to(device), batch[1].to(device)
+                output = model(x)
+                loss = dice_loss(output, y)
+                val_losses.append(loss.item())
+
+        # average validation loss
+        avg_val_loss = np.mean(val_losses)
+
+        # tensorboard
+        writer.add_scalar("Loss/Train", avg_train_loss, epoch)
+        writer.add_scalar("Loss/Val", avg_val_loss, epoch)
+        writer.add_scalar("LR", scheduler.get_last_lr()[0], epoch)
+
+        print(f"Epoch {epoch+1}/{num_epochs} | Train Dice Loss: {avg_train_loss:.4f} | Val Dice Loss: {avg_val_loss:.4f}")
+
+        # early stopping
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            trigger = 0
+            torch.save(model.state_dict(), "best_model.pth")  
+        else:
+            trigger += 1
+            if trigger >= patience:
+                print("Early stopping triggered.")
+                break
+
+        scheduler.step()
+
+    writer.close()  
+
+# main
+if __name__ == "__main__":
+    # training and validation datasets
+    train_dataset = HeartMRIDataset(split='train')
+    val_dataset = HeartMRIDataset(split='val')
+
+    # dataloaders for batch processing
+    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=1)
+
+    # use gpu
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model = UNet3D(in_channels=1, out_channels=1)
+
+    # train the model
+    train_model(model, train_loader, val_loader, device, num_epochs=100)
+
+
+# %%
 ```
 # Output:
 
+Epoch 1/100 | Train Dice Loss: 0.9463 | Val Dice Loss: 0.9725
+Epoch 2/100 | Train Dice Loss: 0.9552 | Val Dice Loss: 0.9375
+Epoch 3/100 | Train Dice Loss: 0.9460 | Val Dice Loss: 0.9757
+Epoch 4/100 | Train Dice Loss: 0.9485 | Val Dice Loss: 0.9254
+Epoch 5/100 | Train Dice Loss: 0.9129 | Val Dice Loss: 0.9827
+Epoch 6/100 | Train Dice Loss: 0.9497 | Val Dice Loss: 0.9817
+Epoch 7/100 | Train Dice Loss: 0.9157 | Val Dice Loss: 0.8979
+Epoch 8/100 | Train Dice Loss: 0.9294 | Val Dice Loss: 0.9057
+Epoch 9/100 | Train Dice Loss: 0.9212 | Val Dice Loss: 0.9160
+Epoch 10/100 | Train Dice Loss: 0.9268 | Val Dice Loss: 0.9770
+Epoch 11/100 | Train Dice Loss: 0.9333 | Val Dice Loss: 0.9248
+Epoch 12/100 | Train Dice Loss: 0.9022 | Val Dice Loss: 0.9457
+Epoch 13/100 | Train Dice Loss: 0.9189 | Val Dice Loss: 0.9567
+Epoch 14/100 | Train Dice Loss: 0.9595 | Val Dice Loss: 0.9190
+Epoch 15/100 | Train Dice Loss: 0.9347 | Val Dice Loss: 0.9309
+Epoch 16/100 | Train Dice Loss: 0.8999 | Val Dice Loss: 0.9401
+Epoch 17/100 | Train Dice Loss: 0.9371 | Val Dice Loss: 0.9690
+Early stopping triggered.
 
+Training Dice Loss:
+
+<img width="369" alt="training_train_loss" src="https://github.com/user-attachments/assets/542f8e78-d239-4488-a9a8-0998c0c9a176" />
+
+Validation Dice Loss:
+
+<img width="360" alt="training_val_loss" src="https://github.com/user-attachments/assets/c39aaf87-b188-4c05-98ed-1a41832d1dec" />
+
+Model Computational Graph:
+![training_comp_graph](https://github.com/user-attachments/assets/fe8ae60b-d5c6-4f60-8af4-18de673f08e5)
+
+Example Segmentation Predictions: 
+
+<img width="389" alt="training_pred_red" src="https://github.com/user-attachments/assets/efde238b-7478-4c40-b4fd-c011075606aa" />
+
+<img width="385" alt="training_actual_red" src="https://github.com/user-attachments/assets/5c296385-84a7-4d93-9976-71a863e0e5ea" />
+
+<img width="387" alt="training_pred_blue" src="https://github.com/user-attachments/assets/929c3f66-b7f4-4f82-8d99-db0bc994ad35" />
+
+<img width="380" alt="training_actual_blue" src="https://github.com/user-attachments/assets/74d832ce-2227-4b6c-acc8-9f08def68be5" />
+
+Memory Usage Statistics:
+
+<img width="368" alt="training_allocated" src="https://github.com/user-attachments/assets/69822ef3-ee9f-4748-9bd8-a45976347b17" />
+
+<img width="355" alt="training_reserved" src="https://github.com/user-attachments/assets/746555fc-8613-44d2-82d7-68a8f8fd698f" />
+
+Learning Rate Graph:
+
+<img width="359" alt="training_learning_rate" src="https://github.com/user-attachments/assets/0331a468-76b2-4fc0-b36d-a686f26938c1" />
 
 
 #### Model Evaluation
