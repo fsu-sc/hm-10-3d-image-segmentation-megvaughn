@@ -27,7 +27,7 @@ import SimpleITK as sitk
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 
-# heart mri dataset for training
+# heart mri dataset for training.py
 class HeartMRIDataset(Dataset):
     def __init__(self, root_dir="/home/osz09/DATA_SharedClasses/SharedDatasets/MedicalDecathlon/Task02_Heart", split='train'):
         self.image_dir = os.path.join(root_dir, "imagesTr")
@@ -48,23 +48,40 @@ class HeartMRIDataset(Dataset):
         image_path = os.path.join(self.image_dir, self.file_list[idx])
         label_path = os.path.join(self.label_dir, self.file_list[idx].replace("_0000", ""))
 
-        # Load with SimpleITK
+        # load image and label using SimpleITK
         image = sitk.ReadImage(image_path)
         label = sitk.ReadImage(label_path)
 
         image_array = sitk.GetArrayFromImage(image).astype(np.float32)
         label_array = sitk.GetArrayFromImage(label).astype(np.float32)
 
-        # Normalize image to [0, 1]
+        # normalize to [0, 1]
         image_array = (image_array - np.min(image_array)) / (np.max(image_array) - np.min(image_array) + 1e-8)
 
-        # Add channel dimension: (1, D, H, W)
-        image_tensor = torch.from_numpy(image_array).unsqueeze(0)
+        # crop size (D, H, W)
+        crop_d, crop_h, crop_w = 64, 128, 128
+        D, H, W = image_array.shape
+
+        # make sure crop fits
+        assert D >= crop_d and H >= crop_h and W >= crop_w, "Crop size is larger than input volume."
+
+        # random crop start indices
+        start_d = np.random.randint(0, D - crop_d + 1)
+        start_h = np.random.randint(0, H - crop_h + 1)
+        start_w = np.random.randint(0, W - crop_w + 1)
+
+        # apply crop to both image and label
+        image_array = image_array[start_d:start_d+crop_d, start_h:start_h+crop_h, start_w:start_w+crop_w]
+        label_array = label_array[start_d:start_d+crop_d, start_h:start_h+crop_h, start_w:start_w+crop_w]
+
+        # convert to tensors and add channel dimension: (1, D, H, W)
+        image_tensor = torch.from_numpy(image_array).unsqueeze(0)  # shape (1, D, H, W)
         label_tensor = torch.from_numpy(label_array).unsqueeze(0)
 
         return image_tensor, label_tensor
 
-# load heart mri dataset
+
+# load heart mri dataset for analyze_data.py
 if __name__ == "__main__":
     # load heart mri dataset
     data_dir = "/home/osz09/DATA_SharedClasses/SharedDatasets/MedicalDecathlon/Task02_Heart"
@@ -140,7 +157,6 @@ if __name__ == "__main__":
     plt.ylabel("Number of cases")
     plt.show()
 
-# %%
 
 ```
 
