@@ -182,6 +182,8 @@ Volume stats:
 
 ![data_exploration_histo](https://github.com/user-attachments/assets/2deea097-35af-4e73-b9be-7665894fec92)
 
+Most volume ranges have three cases each. The distribution appears fairly even across the middle volume ranges, with fewer cases in the extremes.
+
 
 #### Model Architecture 
 Design and implement a 3D CNN in mymodel.py that includes:
@@ -480,13 +482,19 @@ if __name__ == "__main__":
 
 <img width="279" alt="training_epochs" src="https://github.com/user-attachments/assets/40e33cbc-4405-49cb-87f5-693bf49b8475" />
 
+The model improves rapidly in early epochs. Training improved but validation started to decrease after epoch 7. 
+
 Training Dice Loss:
 
 <img width="369" alt="training_train_loss" src="https://github.com/user-attachments/assets/542f8e78-d239-4488-a9a8-0998c0c9a176" />
 
+All curves show a general decrease in training loss over time, indicating the model is learning and is improving fit to the training data. There are some fluctuations in the models, indicating some unstable training. The pink line was the best run, with the lowest dice loss.
+
 Validation Dice Loss:
 
 <img width="360" alt="training_val_loss" src="https://github.com/user-attachments/assets/c39aaf87-b188-4c05-98ed-1a41832d1dec" />
+
+The validation dice loss curves fluctuate a lot, this indicates unstable performance. The majority of the validation dice loss curves decrease within the first 5-10 epochs and continue to decrease more later on.
 
 Model Computational Graph:
 ![training_comp_graph](https://github.com/user-attachments/assets/fe8ae60b-d5c6-4f60-8af4-18de673f08e5)
@@ -497,19 +505,29 @@ Example Segmentation Predictions:
 
 <img width="385" alt="training_actual_red" src="https://github.com/user-attachments/assets/5c296385-84a7-4d93-9976-71a863e0e5ea" />
 
+For the first example, red, the prection image is fuzzy, but some areas are brighter, meaning the model is more confident in it's segmentation in these regions. The actual image is completely black, indicating no segmentation.
+
 <img width="387" alt="training_pred_blue" src="https://github.com/user-attachments/assets/929c3f66-b7f4-4f82-8d99-db0bc994ad35" />
 
 <img width="380" alt="training_actual_blue" src="https://github.com/user-attachments/assets/74d832ce-2227-4b6c-acc8-9f08def68be5" />
+
+For the second example, blue, the prediction image is the model output before thresholding, where brighter regions indicate high predicted probability that a voxel belongs to the target class. There is a lot of noise in the prediction image, as well as some anatomical features. A binary segmentation mask is applied to the actual image, a small region in the bottom right corner is segmented.
 
 Memory Usage Statistics:
 
 <img width="368" alt="training_allocated" src="https://github.com/user-attachments/assets/69822ef3-ee9f-4748-9bd8-a45976347b17" />
 
+In the memory allocated graph, the GPU memory usage is low. 
+
 <img width="355" alt="training_reserved" src="https://github.com/user-attachments/assets/746555fc-8613-44d2-82d7-68a8f8fd698f" />
+
+In the memory reserved graph, PyTorch reserves more memory than it uses to reduce GPU fragmentation and make future runs faster.
 
 Learning Rate Graph:
 
 <img width="359" alt="training_learning_rate" src="https://github.com/user-attachments/assets/0331a468-76b2-4fc0-b36d-a686f26938c1" />
+
+The learning rate was initally high, around epoch 17-18, the learning rate scheduler beings to work, likely after no validation improvement. The decrease in learning rate helps to stabilize training.
 
 
 #### Model Evaluation
@@ -614,4 +632,8 @@ Sample 4 Dice score: 0.1965
 Average Dice score over 4 samples: 0.0904
 
 <img width="647" alt="model_eval_3d" src="https://github.com/user-attachments/assets/7e47f873-787a-4715-8ff3-7cf1a5bfbe0b" />
+
+In the prediction Dice graph, the model predicted oversegmentation, indicating a high false positive rate, the model is classifying noise as target pixels. 
+
+In the actual Dice graph, the segmentation is clearly labeled, and is in one region.
 
